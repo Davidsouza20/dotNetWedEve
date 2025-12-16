@@ -1,0 +1,11 @@
+{
+    "framework": null,
+    "buildCommand": "",
+    "outputDirectory": "bin/Release/net9.0/publish/wwwroot",
+    "routes": [
+        {
+            "src": "/(.*)",
+            "dest": "/index.html"
+        }
+    ]
+}
