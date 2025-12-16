@@ -1,10 +1,11 @@
 {
-    "rewrites": [
+    "framework": null,
+    "buildCommand": "",
+    "outputDirectory": "bin/Release/net9.0/publish/wwwroot",
+    "routes": [
         {
-            "source": "/(.*)",
-            "destination": "/index.html"
+            "src": "/(.*)",
+            "dest": "/index.html"
         }
-    ],
-    "installCommand": "curl -sSL https://dot.net/v1/dotnet-install.sh | bash /dev/stdin --channel 9.0",
-    "buildCommand": "$HOME/.dotnet/dotnet publish -c Release --output build"
+    ]
 }
