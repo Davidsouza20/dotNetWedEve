@@ -1,0 +1,126 @@
+@page "/transactions/create"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Forms
+@using dotNetWedEve
+@inject IDbContextFactory<dotNetWedEveContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>Transaction</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Transaction" OnValidSubmit="AddTransaction" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label> 
+                <InputText id="name" @bind-Value="Transaction.Name" class="form-control" /> 
+                <ValidationMessage For="() => Transaction.Name" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount:</label> 
+                <InputNumber id="amount" @bind-Value="Transaction.Amount" class="form-control" /> 
+                <ValidationMessage For="() => Transaction.Amount" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="type" class="form-label">Type:</label>
+                <InputSelect id="type" @bind-Value="Transaction.Type" class="form-control">
+                    @foreach (TransactionType t in Enum.GetValues(typeof(TransactionType)))
+                    {
+                        <option value="@t">@t</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => Transaction.Type" class="text-danger" />
+            </div>
+            <div class="mb-3">
+                <label for="date" class="form-label">Date:</label> 
+                <InputDate id="date" @bind-Value="Transaction.Date" class="form-control" /> 
+                <ValidationMessage For="() => Transaction.Date" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="notes" class="form-label">Notes:</label> 
+                <InputText id="notes" @bind-Value="Transaction.Notes" class="form-control" /> 
+                <ValidationMessage For="() => Transaction.Notes" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label class="form-label">Category:</label>
+                <InputSelect @bind-Value="SelectedCategoryId" class="form-select" disabled="@IsAddingNewCategory">
+                    <option value="">-- Select category --</option>
+                    @foreach (var c in Categories)
+                    {
+                        <option value="@c.Id">@c.Name</option>
+                    }
+                </InputSelect>
+            </div>
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/transactions">Back to List</a>
+</div>
+
+@code {
+    // Initialize required properties to satisfy non-nullable/required model members
+    private Transaction Transaction { get; set; } = new Transaction()
+    {
+        Name = string.Empty,
+        Amount = decimal.Zero,
+        Category = new Category() { Name = string.Empty, Color = string.Empty },
+        Type = TransactionType.Expense,
+        Date = DateTime.Now,
+        Notes = string.Empty
+    };
+
+    // UI state for categories
+    private List<Category> Categories { get; set; } = new List<Category>();
+    private int? SelectedCategoryId { get; set; }
+    private bool IsAddingNewCategory { get; set; } = false;
+    private string NewCategoryName { get; set; } = string.Empty;
+    private string NewCategoryColor { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using dotNetWedEveContext? context = DbFactory.CreateDbContext();
+        Categories = await context.Category.OrderBy(c => c.Name).ToListAsync();
+        if (Categories.Any())
+        {
+            SelectedCategoryId = Categories.First().Id;
+        }
+    }
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddTransaction()
+    {
+        using dotNetWedEveContext? context = DbFactory.CreateDbContext();
+
+            // If user is adding a new category, create it first
+            if (IsAddingNewCategory && !string.IsNullOrWhiteSpace(NewCategoryName))
+            {
+                var newCat = new Category { Name = NewCategoryName.Trim(), Color = NewCategoryColor ?? string.Empty };
+                context.Category.Add(newCat);
+                await context.SaveChangesAsync();
+                Transaction.Category = newCat;
+            }
+            else if (SelectedCategoryId.HasValue)
+            {
+                // Attach existing category reference
+                var existing = await context.Category.FindAsync(SelectedCategoryId.Value);
+                if (existing != null)
+                {
+                    Transaction.Category = existing;
+                }
+            }
+
+            context.Transaction.Add(Transaction);
+            await context.SaveChangesAsync();
+            NavigationManager.NavigateTo("/transactions");
+    }
+}

@@ -1,0 +1,61 @@
+@using Microsoft.EntityFrameworkCore
+@page "/charts/income-vs-expenses"
+@inject IDbContextFactory<dotNetWedEveContext> DbFactory
+@inject IJSRuntime JS
+
+<h5>Income vs Expenses</h5>
+
+<div class="chart-container">
+    <canvas id="incomeExpenseChart"></canvas>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        using var db = await DbFactory.CreateDbContextAsync();
+        var transactions = await db.Transaction.ToListAsync();
+        if (!transactions.Any()) return;
+
+        var first = transactions.Min(t => t.Date);
+        var last = transactions.Max(t => t.Date);
+
+        var months = new List<DateTime>();
+        var temp = new DateTime(first.Year, first.Month, 1);
+        while (temp <= last)
+        {
+            months.Add(temp);
+            temp = temp.AddMonths(1);
+        }
+
+        var labels = months.Select(m => $"{m:MM/yyyy}").ToArray();
+        var income = months.Select(m =>
+            (double)transactions
+                .Where(t => t.Type == TransactionType.Income &&
+                            t.Date.Year == m.Year &&
+                            t.Date.Month == m.Month)
+                .Sum(t => t.Amount)
+        ).ToArray();
+        var expenses = months.Select(m =>
+            (double)transactions
+                .Where(t => t.Type == TransactionType.Expense &&
+                            t.Date.Year == m.Year &&
+                            t.Date.Month == m.Month)
+                .Sum(t => t.Amount)
+        ).ToArray();
+
+        var chartData = new
+        {
+            labels,
+            datasets = new[]
+            {
+                new { label = "Income", data = income, borderColor = "green", backgroundColor = "rgba(0,128,0,0.1)", fill = true },
+                new { label = "Expenses", data = expenses, borderColor = "red", backgroundColor = "rgba(255,0,0,0.1)", fill = true }
+            }
+        };
+
+        await Task.Delay(50); // ensure JS is loaded
+        await JS.InvokeVoidAsync("renderChart", "incomeExpenseChart", "line", chartData);
+    }
+}

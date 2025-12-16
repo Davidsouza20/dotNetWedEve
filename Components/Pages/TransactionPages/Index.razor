@@ -1,0 +1,78 @@
+@page "/transactions"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using dotNetWedEve
+@implements IAsyncDisposable
+@inject IDbContextFactory<dotNetWedEveContext> DbFactory
+
+<PageTitle>Index</PageTitle>
+
+<h1>Transactions</h1>
+
+<p>
+    <a href="transactions/create" style="border: 2px solid currentColor; border-radius: 7px; padding: 4px; float: right">Add New Transaction</a>
+</p>
+
+<input type="search" @bind="searchText" @bind:event="oninput" placeholder="Search..." class="form-control" style="width:60%"/>
+
+<QuickGrid Class="table" Items="@FilteredItems.Include(t => t.Category)" Pagination="@pagination">
+    <PropertyColumn Title="Date" Property="@(transaction => transaction.Date)" Sortable="true" IsDefaultSortColumn="true" Format="MMM dd, yyyy"/>
+    <TemplateColumn Title="Name" SortBy="@sortByName">
+        <a href="@($"transactions/details?id={context.Id}")">@context.Name</a>
+    </TemplateColumn>
+    <TemplateColumn Title="Category" SortBy="@sortByCategory">
+        <a href="@($"categories/details?id={context.Category.Id}")">@context.Category.Name</a>
+    </TemplateColumn>
+    <TemplateColumn Title="Amount" SortBy="@sortByAmount">
+        <span style="color: @(context.Type == 0 ? "black" : "green")">@context.Amount.ToString("C")</span>
+    </TemplateColumn>
+        
+
+    
+    <TemplateColumn Title="Delete" Context="transaction">
+        <a href="@($"transactions/delete?id={transaction.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+<div class="page-size-chooser">
+    Items per page:
+    <select @bind="@pagination.ItemsPerPage">
+        <option>5</option>
+        <option>10</option>
+        <option>20</option>
+        <option>50</option>
+    </select>
+</div>
+
+<Paginator State="@pagination" />
+
+@code {
+    private dotNetWedEveContext context = default!;
+    private string searchText = string.Empty;
+    PaginationState pagination = new PaginationState { ItemsPerPage = 10 };
+
+    private IQueryable<Transaction> FilteredItems => 
+        context.Transaction
+            .Include(t => t.Category)
+            .Where(t => 
+                !string.IsNullOrWhiteSpace(t.Name) &&
+                t.Amount > 0 &&
+                t.Name.ToUpper().Contains(searchText.ToUpper() ?? string.Empty)
+            );
+
+
+    GridSort<Transaction> sortByName = GridSort<Transaction>
+        .ByAscending(p => p.Name);
+    GridSort<Transaction> sortByCategory = GridSort<Transaction>
+        .ByAscending(p => p.Category.Name);
+    GridSort<Transaction> sortByAmount = GridSort<Transaction>
+        .ByAscending(p => (double)p.Amount);
+
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

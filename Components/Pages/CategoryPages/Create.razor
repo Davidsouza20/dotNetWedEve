@@ -1,0 +1,58 @@
+@page "/categories/create"
+@using Microsoft.EntityFrameworkCore
+@using dotNetWedEve
+@inject IDbContextFactory<dotNetWedEveContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create</PageTitle>
+
+<h1>Create</h1>
+
+<h2>Category</h2>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <EditForm method="post" Model="Category" OnValidSubmit="AddCategory" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert"/>
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label> 
+                <InputText id="name" @bind-Value="Category.Name" class="form-control" /> 
+                <ValidationMessage For="() => Category.Name" class="text-danger" /> 
+            </div>        
+            <div class="mb-3">
+                <label for="color" class="form-label">Color:</label>
+                <div class="d-flex align-items-center">
+                    <!-- native color picker bound to the Category.Color string (e.g. #rrggbb) -->
+                    <input id="color" type="color" @bind="Category.Color" class="form-control form-control-color" style="width:3rem;height:2.25rem;padding:0;border:1px solid #ced4da;border-radius:0.25rem;" />
+
+                    <!-- text input so users can edit/paste hex values and see the value directly -->
+                    <InputText id="colorText" @bind-Value="Category.Color" class="form-control ms-2" />
+
+                    <!-- small swatch preview that updates as Category.Color changes -->
+                    <span class="ms-2" aria-hidden="true" style="display:inline-block;width:1.5rem;height:1.5rem;border:1px solid #ccc;background:@Category.Color;"></span>
+                </div>
+                <ValidationMessage For="() => Category.Color" class="text-danger" /> 
+            </div>        
+            <button type="submit" class="btn btn-primary">Create</button>
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/categories">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Category Category { get; set; } = new Category() { Name = string.Empty, Color = string.Empty };
+
+    // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task AddCategory()
+    {
+        using dotNetWedEveContext? context = DbFactory.CreateDbContext();
+        context.Category.Add(Category);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/categories");
+    }
+}

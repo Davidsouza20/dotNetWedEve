@@ -1,0 +1,43 @@
+@page "/categories"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using dotNetWedEve
+@implements IAsyncDisposable
+@inject IDbContextFactory<dotNetWedEveContext> DbFactory
+
+<PageTitle>Index</PageTitle>
+
+<h1>Categories</h1>
+
+<p>
+    <a href="categories/create" style="border: 2px solid currentColor; border-radius: 7px; padding: 4px; float: right">Create New</a>
+</p>
+
+<QuickGrid Class="table" Items="context.Category">
+    <PropertyColumn Property="category => category.Name" />
+
+    <TemplateColumn Context="category" Title="Color">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+            <div style="width:1rem; height:1rem; border:1px solid #ccc; background:@category.Color"></div>
+            <div>@category.Color</div>
+        </div>
+    </TemplateColumn>
+
+    <TemplateColumn Context="category">
+        <a href="@($"categories/edit?id={category.Id}")">Edit</a> |
+        <a href="@($"categories/details?id={category.Id}")">Details</a> |
+        <a href="@($"categories/delete?id={category.Id}")">Delete</a>
+    </TemplateColumn>
+</QuickGrid>
+
+@code {
+    private dotNetWedEveContext context = default!;
+
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+    }
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

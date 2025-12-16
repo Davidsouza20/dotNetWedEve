@@ -1,0 +1,91 @@
+﻿@page "/"
+@using dotNetWedEve
+@using Microsoft.EntityFrameworkCore
+@inject dotNetWedEveContext Db
+
+<PageTitle>Dashboard</PageTitle>
+
+<h1>Dashboard</h1>
+
+<section>
+    <h2>Balance</h2>
+
+    <div class="balance-overview">
+
+        <div class="balance-item">
+            <h3>Available Balance</h3>
+            <p>@availableBalance.ToString("C")</p>
+        </div>
+
+        <div class="balance-item">
+            <h3>Total Income</h3>
+            <p>@totalIncome.ToString("C")</p>
+        </div>
+
+        <div class="balance-item">
+            <h3>Total Expenses</h3>
+            <p>@totalExpenses.ToString("C")</p>
+        </div>
+
+        <div class="balance-item">
+            <h3>Savings Rate</h3>
+            <p>@savingsRate.ToString("0.00")%</p>
+        </div>
+
+    </div>
+</section>
+
+<section>
+    <h2>Summary</h2>
+
+    <div class="transaction-summary">
+        <h3>Recent Transactions</h3>
+
+        <ul>
+            @foreach (var transaction in recentTransactions)
+            {
+                <li>
+                    @transaction.Name —
+                    @transaction.Amount.ToString("C") —
+                    @transaction.Date.ToShortDateString()
+                </li>
+            }
+        </ul>
+    </div>
+</section>
+
+
+@code {
+    decimal totalIncome;
+    decimal totalExpenses;
+    decimal availableBalance;
+    decimal savingsRate;
+
+    List<Transaction> recentTransactions = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var transactions = await Db.Transaction
+            .Include(t => t.Category)
+            .OrderByDescending(t => t.Date)
+            .ToListAsync();
+
+        totalIncome = transactions
+            .Where(t => t.Type == TransactionType.Income)
+            .Sum(t => t.Amount);
+
+        totalExpenses = transactions
+            .Where(t => t.Type == TransactionType.Expense)
+            .Sum(t => t.Amount);
+
+        availableBalance = totalIncome - totalExpenses;
+
+        savingsRate = totalIncome == 0
+            ? 0
+            : (availableBalance / totalIncome) * 100;
+
+        recentTransactions = transactions
+            .Take(3)
+            .ToList();
+    }
+}

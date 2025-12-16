@@ -1,0 +1,66 @@
+@page "/charts/spending-by-category"
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<dotNetWedEveContext> DbFactory
+@inject IJSRuntime JS
+
+<h5>Spending By Category</h5>
+
+<div class="chart-container">
+    <canvas id="categoryChart"></canvas>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        using var db = await DbFactory.CreateDbContextAsync();
+
+        var categories = await db.Category.ToListAsync();
+    
+        
+        var transactions = await db.Transaction
+            .Where(t => t.Type == TransactionType.Expense)
+            .Include(t => t.Category)
+            .ToListAsync();
+
+        if (!transactions.Any()) return;
+
+        // Group transactions by category using the populated navigation property.
+        var grouped = categories
+            .Select(c => new
+            {
+                c.Name,
+                Color = c.Color,
+                Sum = (double)transactions
+                        .Where(t => t.Category != null && t.Category.Id == c.Id)
+                        .Sum(t => t.Amount)
+            })
+            .Where(g => g.Sum > 0)
+            .ToList();
+
+        var labels = grouped.Select(g => g.Name).ToArray();
+        var values = grouped.Select(g => g.Sum).ToArray();
+        // Use the category's Color property; fallback to a default palette if not enough colors
+        var bgColors = grouped.Select(g => string.IsNullOrWhiteSpace(g.Color) ? "#CCCCCC" : g.Color).ToArray();
+
+        var chartData = new
+        {
+            labels,
+            datasets = new[]
+            {
+                new
+                {
+                    label = "Expenses by Category",
+                    data = values,
+                    backgroundColor = bgColors
+                }
+            }
+        };
+
+        // Small delay to ensure JS is loaded
+        await Task.Delay(50);
+
+        await JS.InvokeVoidAsync("renderChart", "categoryChart", "pie", chartData);
+    }
+}

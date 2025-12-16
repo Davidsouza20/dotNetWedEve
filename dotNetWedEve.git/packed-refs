@@ -1,0 +1,13 @@
+# pack-refs with: peeled fully-peeled sorted 
+1b7097cd7433150897c20d0445b9e00d56df0057 refs/heads/MyBranch
+bdfd386a7e4cbed8a50e17561a9fc598b81ec9bc refs/heads/am-dashboard
+cf6556c6d60c3922188c38317b2cc1b6c5d0248c refs/heads/authentication
+e4d9ac0af27956264dc43cee690b94e7c8d1e846 refs/heads/azure-pipelines
+95f77e2ff1117c798811e21ab3143162ba591225 refs/heads/david-branch
+c14231f75c1efc378e5c5811660a419e18e461bd refs/heads/feature-charts
+99d7e5b6cf0946afd8beb57279aff4e12fb736ed refs/heads/main
+0fb10adde360fc3ed896c853b5540593d226e865 refs/heads/main-backup
+e7e6d9456f8ac023697e99f63242702dd0995577 refs/heads/pipelines-trial-deploy
+1a05be45b501b291a9e30cb7910bc76711dd5789 refs/heads/working-branch
+423469e469efa8ba55b5bde43c8b10829b41adcf refs/pull/10/merge
+c9077b77d98fdca9117943dbf2bc379f2106e016 refs/pull/11/merge

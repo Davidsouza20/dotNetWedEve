@@ -1,0 +1,71 @@
+@page "/transactions/delete"
+@using Microsoft.EntityFrameworkCore
+@using dotNetWedEve
+@inject IDbContextFactory<dotNetWedEveContext> DbFactory
+@inject NavigationManager NavigationManager
+
+<PageTitle>Delete</PageTitle>
+
+<h1>Delete</h1>
+
+<p>Are you sure you want to delete this?</p>
+<div>
+    <h2>Transaction</h2>
+    <hr />
+    @if (transaction is null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    else {
+        <dl class="row">
+            <dt class="col-sm-2">Name</dt>
+            <dd class="col-sm-10">@transaction.Name</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Amount</dt>
+            <dd class="col-sm-10">@transaction.Amount</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Type</dt>
+            <dd class="col-sm-10">@transaction.Type</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Date</dt>
+            <dd class="col-sm-10">@transaction.Date</dd>
+        </dl>
+        <dl class="row">
+            <dt class="col-sm-2">Notes</dt>
+            <dd class="col-sm-10">@transaction.Notes</dd>
+        </dl>
+        <EditForm method="post" Model="transaction" OnValidSubmit="DeleteTransaction" FormName="delete" Enhance>
+            <button type="submit" class="btn btn-danger" disabled="@(transaction is null)">Delete</button> |
+            <a href="/transactions">Back to List</a>
+        </EditForm>
+    }
+</div>
+
+@code {
+    private Transaction? transaction;
+
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        transaction = await context.Transaction.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (transaction is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    private async Task DeleteTransaction()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Transaction.Remove(transaction!);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/transactions");
+    }
+}

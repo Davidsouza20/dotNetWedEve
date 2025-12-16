@@ -1,0 +1,29 @@
+﻿@inherits LayoutComponentBase
+@using Model
+@inject Model.SimpleAuthService AuthService
+@inject NavigationManager NavManager
+
+<PageTitle>dotNetWedEve</PageTitle>
+
+@code {
+    protected override void OnInitialized()
+    {
+        var currentUri = NavManager.Uri;
+        if (!AuthService.IsAuthenticated && !currentUri.EndsWith("/login"))
+        {
+            NavManager.NavigateTo("/login", true);
+        }
+    }
+}
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>

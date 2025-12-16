@@ -1,0 +1,52 @@
+@page "/charts/spending-overtime"
+@using Microsoft.EntityFrameworkCore
+@inject IDbContextFactory<dotNetWedEveContext> DbFactory
+@inject IJSRuntime JS
+
+<h5>Spending Over Time</h5>
+
+<div class="chart-container">
+    <canvas id="spendingChart"></canvas>
+</div>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        using var db = await DbFactory.CreateDbContextAsync();
+        var transactions = await db.Transaction
+            .Where(t => t.Type == TransactionType.Expense)
+            .ToListAsync();
+
+        if (!transactions.Any()) return;
+
+        var first = transactions.Min(t => t.Date);
+        var last = transactions.Max(t => t.Date);
+
+        var months = new List<DateTime>();
+        var temp = new DateTime(first.Year, first.Month, 1);
+        while (temp <= last)
+        {
+            months.Add(temp);
+            temp = temp.AddMonths(1);
+        }
+
+        var labels = months.Select(m => $"{m:MM/yyyy}").ToArray();
+        var data = months.Select(m =>
+            (double)transactions.Where(t => t.Date.Year == m.Year && t.Date.Month == m.Month).Sum(t => t.Amount)
+        ).ToArray();
+
+        var chartData = new
+        {
+            labels,
+            datasets = new[]
+            {
+                new { label = "Expenses", data = data, borderColor = "blue", backgroundColor = "rgba(0,0,255,0.1)", fill = true }
+            }
+        };
+
+        await Task.Delay(50); // ensure JS is loaded
+        await JS.InvokeVoidAsync("renderChart", "spendingChart", "line", chartData);
+    }
+}
